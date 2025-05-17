@@ -1,0 +1,33 @@
+{% extends 'fitness/base.html' %}
+
+{% block title %}Add Exercise{% endblock %}
+
+{% block content %}
+<h1>Add Exercise to Workout</h1>
+<p>Workout Date: {{ workout.date }}</p>
+<p>Notes: {{ workout.notes }}</p>
+
+<h2 class="mt-4">Add New Exercise</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Add Exercise</button>
+</form>
+
+<h2 class="mt-4">Current Exercises</h2>
+<ul class="list-group">
+    {% for exercise in exercises %}
+    <li class="list-group-item">
+        {{ exercise.exercise.name }} - 
+        Sets: {{ exercise.sets }}, 
+        Reps: {{ exercise.reps }}
+        {% if exercise.weight %}Weight: {{ exercise.weight }}kg{% endif %}
+        {% if exercise.duration %}Duration: {{ exercise.duration }}{% endif %}
+    </li>
+    {% empty %}
+    <li class="list-group-item">No exercises added yet</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'fitness:dashboard' %}" class="btn btn-secondary mt-3">Finish Workout</a>
+{% endblock %}

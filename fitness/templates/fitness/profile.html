@@ -1,0 +1,15 @@
+{% extends 'fitness/base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<h1>Profile</h1>
+<form method="post">
+    {% csrf_token %}
+    <h2>User Information</h2>
+    {{ user_form.as_p }}
+    <h2>Profile Information</h2>
+    {{ profile_form.as_p }}
+    <button type="submit" class="btn btn-primary">Update Profile</button>
+</form>
+{% endblock %}

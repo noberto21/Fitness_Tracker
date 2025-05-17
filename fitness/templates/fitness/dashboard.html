@@ -1,0 +1,128 @@
+{% extends "fitness/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-lg-8">
+        <div class="card mb-4 hover-scale">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Your Progress</h3>
+                <span class="badge rounded-pill bg-dark">{{ workouts.count }} workouts</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-danger">{{ total_workouts }}</h4>
+                            <p class="mb-0 text-muted">Total Workouts</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-danger">{{ total_exercises }}</h4>
+                            <p class="mb-0 text-muted">Exercises Logged</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-danger">{{ last_workout_date|date:"M d"|default:"-" }}</h4>
+                            <p class="mb-0 text-muted">Last Workout</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5 class="d-flex justify-content-between align-items-center">
+                        <span>Recent Activity</span>
+                        <a href="{% url 'fitness:create_workout' %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-plus me-1"></i> New Workout
+                        </a>
+                    </h5>
+                    
+                    {% if workouts %}
+                        <div class="list-group list-group-flush mt-3">
+                            {% for workout in workouts %}
+                            <a href="{% url 'fitness:view_workout' workout.id %}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center animate__animated animate__fadeIn">
+                                <div>
+                                    <h6 class="mb-1">{{ workout.date }}</h6>
+                                    {% if workout.notes %}
+                                        <small class="text-muted">{{ workout.notes|truncatechars:60 }}</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-dark rounded-pill">{{ workout.workoutexercise_set.count }} ex</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No workouts yet</h5>
+                            <a href="{% url 'fitness:create_workout' %}" class="btn btn-danger mt-2">
+                                Start Your First Workout
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4 hover-scale">
+            <div class="card-header">
+                <h3 class="mb-0">Quick Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'fitness:create_workout' %}" class="btn btn-danger">
+                        <i class="fas fa-plus-circle me-2"></i>New Workout
+                    </a>
+                    <a href="#" class="btn btn-outline-dark">
+                        <i class="fas fa-chart-line me-2"></i>View Progress
+                    </a>
+                    <a href="{% url 'fitness:profile' %}" class="btn btn-outline-dark">
+                        <i class="fas fa-user-edit me-2"></i>Update Profile
+                    </a>
+                </div>
+                
+                <hr>
+                
+                <h5 class="mb-3">Top Exercises</h5>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Squats</span>
+                        <span class="badge bg-danger rounded-pill">15x</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Bench Press</span>
+                        <span class="badge bg-danger rounded-pill">12x</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Deadlifts</span>
+                        <span class="badge bg-danger rounded-pill">10x</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate workout items sequentially
+    document.addEventListener('DOMContentLoaded', function() {
+        const workoutItems = document.querySelectorAll('.list-group-item');
+        gsap.from(workoutItems, {
+            duration: 0.5,
+            x: -20,
+            opacity: 0,
+            stagger: 0.1,
+            delay: 0.4,
+            ease: "power2.out"
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'fitness/base.html' %}
+
+{% block title %}Create Workout{% endblock %}
+
+{% block content %}
+<h1>Create New Workout</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Create Workout</button>
+</form>
+{% endblock %}
