@@ -4,6 +4,11 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import UserCreationForm
 from .models import Workout, WorkoutExercise, Exercise, UserProfile
 from .forms import WorkoutForm, WorkoutExerciseForm, UserForm, UserProfileForm
+from django.db.models import Count, Sum
+from datetime import datetime, timedelta
+import json
+from django.http import JsonResponse
+
 
 @login_required
 def dashboard(request):
@@ -98,3 +103,67 @@ def signup(request):
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+@login_required
+def view_progress(request):
+    # Date ranges
+    today = datetime.now().date()
+    last_week = today - timedelta(days=7)
+    last_month = today - timedelta(days=30)
+    
+    # Workout statistics
+    workout_stats = {
+        'total': Workout.objects.filter(user=request.user).count(),
+        'monthly': Workout.objects.filter(user=request.user, date__gte=last_month).count(),
+        'weekly': Workout.objects.filter(user=request.user, date__gte=last_week).count()
+    }
+    
+    # Exercise statistics
+    exercise_stats = {
+        'total': WorkoutExercise.objects.filter(workout__user=request.user).count(),
+        'monthly': WorkoutExercise.objects.filter(
+            workout__user=request.user,
+            workout__date__gte=last_month
+        ).count(),
+        'weekly': WorkoutExercise.objects.filter(
+            workout__user=request.user,
+            workout__date__gte=last_week
+        ).count()
+    }
+    
+    # Top exercises with error handling
+    try:
+        top_exercises = list(WorkoutExercise.objects.filter(
+            workout__user=request.user
+        ).values(
+            'exercise__name'
+        ).annotate(
+            total_sets=Sum('sets'),
+            total_reps=Sum('reps'),
+            count=Count('exercise')
+        ).order_by('-count')[:5])
+    except Exception as e:
+        top_exercises = []
+    
+    # Workout frequency data
+    workout_dates = Workout.objects.filter(
+        user=request.user
+    ).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Prepare chart data
+    chart_data = {
+        'labels': [entry['date'].strftime('%Y-%m-%d') for entry in workout_dates],
+        'data': [entry['count'] for entry in workout_dates]
+    }
+    
+    context = {
+        'workout_stats': workout_stats,
+        'exercise_stats': exercise_stats,
+        'top_exercises': top_exercises,
+        'chart_data_json': json.dumps(chart_data),
+        'has_data': workout_stats['total'] > 0
+    }
+    
+    return render(request, 'fitness/progress.html', context)

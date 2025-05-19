@@ -1,0 +1,323 @@
+{% extends "fitness/base.html" %}
+
+{% block title %}Progress Tracking{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css" rel="stylesheet">
+<style>
+    .progress-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        background: white;
+    }
+    
+    .progress-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+    
+    .progress-header {
+        background-color: var(--black);
+        color: white;
+        padding: 1.25rem;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-red);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--medium-grey);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .exercise-badge {
+        background-color: rgba(230, 57, 70, 0.1);
+        color: var(--primary-red);
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .exercise-stat {
+        font-size: 0.8rem;
+        color: var(--dark-grey);
+        margin-left: 0.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .no-data-placeholder {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .streak-count {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-red);
+        line-height: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Your Progress</h1>
+        <a href="{% url 'fitness:dashboard' %}" class="btn btn-outline-dark">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+    
+    {% if not has_data %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-line fa-4x text-muted mb-4"></i>
+            <h3 class="text-muted">No Workout Data Yet</h3>
+            <p class="lead">Start logging workouts to see your progress</p>
+            <a href="{% url 'fitness:create_workout' %}" class="btn btn-danger btn-lg mt-3">
+                <i class="fas fa-plus me-2"></i>Create First Workout
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <!-- Workout Stats Card -->
+        <div class="col-md-4 mb-3">
+            <div class="progress-card h-100">
+                <div class="progress-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Workouts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="stat-value">{{ workout_stats.total }}</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-value">{{ workout_stats.monthly }}</div>
+                            <div class="stat-label">30 Days</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-value">{{ workout_stats.weekly }}</div>
+                            <div class="stat-label">7 Days</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Exercise Stats Card -->
+        <div class="col-md-4 mb-3">
+            <div class="progress-card h-100">
+                <div class="progress-header">
+                    <h5 class="mb-0"><i class="fas fa-dumbbell me-2"></i>Exercises</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="stat-value">{{ exercise_stats.total }}</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-value">{{ exercise_stats.monthly }}</div>
+                            <div class="stat-label">30 Days</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-value">{{ exercise_stats.weekly }}</div>
+                            <div class="stat-label">7 Days</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Streak Card -->
+        <div class="col-md-4 mb-3">
+            <div class="progress-card h-100">
+                <div class="progress-header">
+                    <h5 class="mb-0"><i class="fas fa-fire me-2"></i>Current Streak</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="streak-count">5</div>
+                    <div class="stat-label">Days in a row</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Workout Chart Card -->
+        <div class="col-lg-8 mb-4">
+            <div class="progress-card h-100">
+                <div class="progress-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Workout Frequency</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="workoutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Exercises Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="progress-card h-100">
+                <div class="progress-header">
+                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Exercises</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_exercises %}
+                        <div class="mb-3">
+                            {% for exercise in top_exercises %}
+                                <div class="exercise-badge">
+                                    {{ exercise.exercise__name }}
+                                    <span class="exercise-stat">{{ exercise.count }}x</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">Most Performed</h5>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-medal fa-2x text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="mb-0">{{ top_exercises.0.exercise__name }}</h5>
+                                <p class="mb-0 text-muted">
+                                    {{ top_exercises.0.count }} workouts
+                                </p>
+                                <p class="mb-0 text-muted">
+                                    {{ top_exercises.0.total_sets|default:0 }} sets • 
+                                    {{ top_exercises.0.total_reps|default:0 }} reps
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="no-data-placeholder">
+                            <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No exercise data</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Only proceed if we have data
+    {% if has_data %}
+    try {
+        const chartData = JSON.parse('{{ chart_data_json|escapejs }}');
+        const ctx = document.getElementById('workoutChart');
+        
+        if (ctx && chartData.labels.length > 0) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Workouts',
+                        data: chartData.data,
+                        backgroundColor: 'rgba(230, 57, 70, 0.1)',
+                        borderColor: 'rgba(230, 57, 70, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgba(230, 57, 70, 1)',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                stepSize: 1,
+                                font: { weight: 'bold' }
+                            },
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Chart initialization error:', error);
+        const chartContainer = document.querySelector('.chart-container');
+        if (chartContainer) {
+            chartContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Could not load progress chart
+                </div>
+            `;
+        }
+    }
+    {% endif %}
+
+    // Animate cards
+    gsap.from('.progress-card', {
+        duration: 0.6,
+        y: 20,
+        opacity: 0,
+        stagger: 0.1,
+        ease: "back.out(1.7)"
+    });
+});
+</script>
+{% endblock %}

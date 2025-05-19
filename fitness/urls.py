@@ -11,7 +11,8 @@ urlpatterns = [
     path('workout/<int:workout_id>/add-exercise/', views.add_exercise, name='add_exercise'),
     path('workout/<int:workout_id>/', views.view_workout, name='view_workout'),
     path('profile/', views.profile, name='profile'),
-    
+    path('progress/', views.view_progress, name='view_progress'),
+
     # Authentication views
     path('accounts/login/', auth_views.LoginView.as_view(
         template_name='registration/login.html',
